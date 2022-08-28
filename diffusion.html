@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+
+<head>
+
+
+
+</head>
+
+<body style="background-color: black;color: aliceblue;">
+    <div style="float: left; margin-left: 10px;">
+        <table>
+            <tr>
+                <td>
+                    2D Heat Equation Solver
+
+                </td>
+                <th> Performed for engineering mathematics class (Professor Rezaei)
+                </th>
+            </tr>
+            <tr>
+                <td style="padding-right: 65px;vertical-align: top;" class="controls">
+                    T1:<br>
+                    <input id="ctlT1" type="range" min="0" max="1" step="0.05" value="1">
+                    <hr>
+                    T2:<br>
+                    <input id="ctlT2" type="range" min="0" max="1" step="0.05" value="0">
+                    <hr>
+                    T3:<br>
+                    <input id="ctlT3" type="range" min="0" max="1" step="0.05" value="0.15">
+                    <hr>
+                    T4:<br>
+                    <input id="ctlT4" type="range" min="0" max="1" step="0.05" value="0">
+                    <hr>
+                    Iterations:<br>
+                    <input id="ctlIteration" type="range" min="100" max="2000" step="1" value="1000">
+                    <hr>
+                    Resulation:<br>
+                    <input id="ctlResulation" type="range" min="0" max="45" step="1" value="45">
+                    <hr>
+                    Conductivity:<br>
+                    <input id="ctlConductivity" type="range" min="0.01" max="0.25" step="0.01" value="0.25">
+                    <hr>
+
+                </td>
+                <td>
+                    <table>
+                        <tr>
+                            <td width="100" ></td>
+                            <td>
+
+                                Slide browse solution => Time : <input id="ctlTime" type="range" min="0" max="999"
+                                    step="1" value="0" oninput="config.autoPlay=false;DrawSolution(this.value)">
+    </div>
+    </td>
+    <td>
+        <span id="ctlInfo">Calculating... </span>
+    </td>
+    </tr>
+    <tr>
+        <td></td>
+        <td id="T2C" style="text-align: center;"> T2 </td>
+        <td></td>
+    </tr>
+    <tr>
+        <td id="T1C"> T1</td>
+        <td><canvas id="board" width="500" height="500" style="border: 1px solid;"></canvas></td>
+        <td id="T3C">T3</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td id="T4C" style="text-align: center;"> T4 </td>
+        <td></td>
+    </tr>
+    </table>
+    </td>
+    <td style="vertical-align: top;">
+        <img width="450" src=".idea/eq.png" /><br>
+        <ul>
+            <li>c: Thermal Conductivity</li>
+            <li>u: Solution</li>
+            <li>t: Time </li>
+            <li>x,y: Coordinates </li>
+        </ul>
+        <ul>
+            <li>    <a style="color: blanchedalmond" href="https://www.linkedin.com/in/hamidreza-hosseini-52ab751b8/">Created by Hamid Reza Hosseini</a>
+            </li>
+        </ul>
+        <br>
+        
+    </td>
+    </tr>
+    </table>
+    </div>
+    <script>
+        canvas = document.getElementById("board");
+        ctx = canvas.getContext("2d");
+        var autoPlayTimeOut;
+        var info;
+        
+        var config = {
+        }
+
+        //Solution Data 
+        var u;
+
+        //generate u data
+        function initSolution() {
+            let segment = Math.floor(canvas.width / config.resulation) + 2;
+            u = [];//time,x,y
+            for (let t = 0; t < config.iterations; t++) {
+                u.push([]);
+                for (let x = 0; x < segment; x++) {
+                    u[t].push([]);
+                    for (let y = 0; y < segment; y++) {
+                        //Boundaries of plane
+                        if (x == 0) {//left
+                            u[t][x][y] = config.T1;
+                        } else if (x == segment - 1) {//Right
+                            u[t][x][y] = config.T3;
+                        } else if (y == 0) {//Up
+                            u[t][x][y] = config.T2;
+                        } else if (y == segment - 1) {//Down
+                            u[t][x][y] = config.T4;
+                        } else {//inner cold space
+                            u[t][x][y] = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        //Draw Canvas
+        function DrawSolution(time) {
+            if (time >= u.length) {
+                return
+            };
+            ctx.beginPath();
+
+            Log("Time: " + time + "/" + u.length);
+            let uT = u[time];
+            for (let x = 0; x < uT.length - 1; x++) {
+                for (let y = 0; y < uT[x].length - 1; y++) {
+                    var density = Math.floor(255 * uT[x + 1][y + 1]);
+                    ctx.fillStyle = 'rgb(' + density + ', ' + 0 + ', ' + 10 + ')';
+                    ctx.fillRect(x * config.resulation, y * config.resulation, config.resulation, config.resulation);
+                }
+            }
+            ctx.stroke();
+            if (config.autoPlay) {
+                autoPlayTimeOut = setTimeout(() => {
+                    DrawSolution(time + 1);
+                }, 50);
+            }
+        }
+
+        //Calculate each time frame
+        function Resolve() {
+            for (let t = 0; t < u.length - 1; t++) {
+                for (let x = 1; x < u[t].length - 1; x++) {
+                    for (let y = 1; y < u[t][x].length - 1; y++) {
+                        u[t + 1][x][y] = config.conductivity * (u[t][x + 1][y] + u[t][x - 1][y] + u[t][x][y + 1] + u[t][x][y - 1] - 4 * u[t][x][y]) + u[t][x][y]
+                    }
+                }
+            } 
+            this.config.autoPlay = true;
+        }
+
+        function BuildConfig() {
+            clearTimeout(autoPlayTimeOut);
+            config = {
+                iterations: document.getElementById('ctlIteration').value,
+                resulation: 50 - document.getElementById('ctlResulation').value,
+                conductivity: document.getElementById('ctlConductivity').value,
+                autoPlay: false
+            }
+
+            for (let i = 1; i < 5; i++) {
+                config["T" + i] = parseFloat(document.getElementById('ctlT' + i).value);
+                document.getElementById("T" + i + "C").innerHTML = "T" + i + ": " + Math.floor(100 * config["T" + i]) + " C";
+            }
+            let timeSlider = document.getElementById('ctlTime');
+            timeSlider.max = config.iterations;
+            timeSlider.value = 0;
+        }
+
+        function InitProblem() {
+            Log("Calculating...")
+            setTimeout(() => {
+                BuildConfig();
+                initSolution();
+                Resolve();
+                DrawSolution(0);
+
+            });
+
+        }
+
+        function Log(log) {
+            info.innerHTML = log;
+        }
+
+        function initUI() {
+            info = document.getElementById('ctlInfo');
+            //Config controller events
+            var controls = document.querySelectorAll(".controls input");
+            for (let i = 0; i < controls.length; i++) {
+                controls[i].addEventListener("change", InitProblem);
+            }
+        }
+
+        initUI();
+        InitProblem();
+    </script>
+</body>
+
+</html>
